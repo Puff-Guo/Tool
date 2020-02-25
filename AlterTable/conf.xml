@@ -1,0 +1,7 @@
+<mysql>
+    host = 10.105.52.181
+    port = 3306
+    user = gordon
+    password = 4qYAEZ6scVNYPLTWRviT
+    database = order_1
+</mysql>

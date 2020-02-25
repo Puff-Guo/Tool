@@ -1,0 +1,32 @@
+<dcache>
+	#proxy�ķ�����
+	default_proxy = centerProxyServer
+
+	#��Ʊ������ģ����. main_key = order_sn, ukey = invoice_id
+	invoice.module = center2invoice
+
+	#��Ʊ��ϸģ����. main_key = order_sn, ukey = line_no+invoice_id
+	invoice_item.module = center2invoiceItem
+
+#��Ʊ������뵽order_snӳ���ģ���� . main_key = ticket_sn, ukey = ticket_code
+        
+	rel_tax_invoice.module = center2relTaxInvoice
+tickets.module = center2tickets
+        u_rel_user_inovice.module = center2relUserInvoice
+#ETC�����travel_apply��ģ���� main_key = b_user_id, ukey = apply_id,is_red
+travel_apply.module = center2travelApply
+#ETC�г̱�travel_item��ģ���� main_key = apply_id, ukey = line_no
+travel_item.module = center2travelItem
+</dcache>
+<dcache_client>
+	 locator=tars.tarsregistry.QueryObj@tcp -h 10.105.237.236 -p 17890
+	 sync-invoke-timeout=30000
+	 async-invoke-timeout=50000
+	 refresh-endpoint-interval=60000
+	 stat=tars.tarsstat.StatObj
+	 property=tars.tarsproperty.PropertyObj
+	 report-interval=60000
+	 sample-rate=100000
+	 max-sample-count=50
+	 asyncthread=3
+</dcache_client>
