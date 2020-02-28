@@ -1,7 +1,7 @@
 <mysql>
-    host = 10.105.52.181
+    host = 10.21.40.7
     port = 3306
     user = gordon
     password = 4qYAEZ6scVNYPLTWRviT
-    database = order_1
+    database = relationship_1
 </mysql>
