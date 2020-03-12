@@ -11,6 +11,6 @@
 <param>
     appid = wx8280850d07d385eb
     max_uid = 10000000
-    dealtool_file_name = fail
-    dealtool_fail_faile = tool_fail
+    deal_file_name = fail
+    dealtool_fail_file = tool_fail
 <param>

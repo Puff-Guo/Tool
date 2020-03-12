@@ -6,10 +6,10 @@
 #include <string>
 #include "servant/Application.h"
 #include "comm_def.h"
+#include "ret_code.h"
 #include "user_base.h"
 #include "CreateTickertDateIndex.h"
 
-using namespace std;
 using namespace tars;
 std::string g_data_base_obj = "userCenter.userBaseSvr.userBaseObj@tcp -h ";
 std::string g_create_index_obj = "invoiceCenter.CreateIndexSvr.CreateTickertDateIndexObj@tcp -h ";
@@ -17,8 +17,8 @@ std::string g_create_index_obj = "invoiceCenter.CreateIndexSvr.CreateTickertDate
 Communicator comm_create_index;
 Communicator comm_data_base;
 
-invoiceCenter::CreateTickertDateIndex create_index_prx;
-userCenter::userBaseService user_base_prx;
+invoiceCenter::CreateTickertDateIndexPrx create_index_prx;
+userCenter::userBaseServicePrx user_base_prx;
 std::string g_mini_pro_appid;
 int g_max_user_id;
 
@@ -36,7 +36,7 @@ bool Init()
 	config.parseFile(conf_file);
 
     g_mini_pro_appid = config.get("/param/<appid>","wx8280850d07d385eb");
-    int max_id = config.get("/param/<max_uid>","10000000");
+    string max_id = config.get("/param/<max_uid>","10000000");
     
     g_max_user_id = std::stoi(max_id);
     std::cout << "max_uid:" << g_max_user_id;
@@ -55,7 +55,7 @@ bool Init()
         return false;
     }
 
-    std::string database_obj = g_data_base_obj + data_base_ip + " " + data_base_port;
+    std::string database_obj = g_data_base_obj + data_base_ip + " -p " + data_base_port;
     std::cout << "database_obj:" << database_obj << std::endl;
 
     comm_data_base.stringToProxy(database_obj,user_base_prx);
@@ -74,24 +74,34 @@ bool Init()
         return false;
     }
 
-    std:string createindex_obj = g_create_index_obj + create_index_ip + " " + create_index_port;
+    std::string createindex_obj = g_create_index_obj + create_index_ip + " -p " + create_index_port;
     std::cout << "createindex_obj:" << createindex_obj << std::endl;
 
     comm_create_index.stringToProxy(createindex_obj,create_index_prx);
+
+    const string app = "tools";
+	const string server = "CreateIndex";
+	const string log_path = "./log";
+    TarsRollLogger::getInstance()->setLogInfo(app, server, log_path, 1024*1024*50, 5);	
+    TarsRollLogger::getInstance()->sync(true);
+	TarsTimeLogger::getInstance()->setLogInfo(NULL, "", app, server, log_path);
+    return true;
 }
 
 int IsUser(int user_id)
 {
     //判断是否是小程序的用户ID
     userCenter::AuthQueryReq req;
-    userCenter::AuthQueryReq rsp;
-    rep.type = 1;
-    rep.uid = user_id;
-    rqp.appid = g_mini_pro_appid;    
+    userCenter::AuthQueryResp rsp;
+    req.type = 1;
+    req.uid = user_id;
+    req.appid = g_mini_pro_appid;    
 
     try
     {
-        user_base_prx->findAuthByKey(req.rsp);
+        std::cout << "begin IsUser user_id:" << user_id << std::endl;
+        user_base_prx->findAuthByKey(req,rsp);
+        std::cout << "end IsUser user_id:" << user_id << std::endl;
         return rsp.auth_req_resp.code;
     }
     catch(const std::exception& e)
@@ -109,7 +119,9 @@ bool CreateIndex(int user_id)
     req.uid = user_id;
     try
     {
+        std::cout << "begin CreateIndex user_id:" << user_id << std::endl;
         create_index_prx->CreateTickertTimeIndex(req,rsp);
+        std::cout << "end CreateIndex user_id:" << user_id << std::endl;
         if(RET_OK == rsp.code)
         {
             return true;
@@ -128,8 +140,7 @@ bool CreateIndex(int user_id)
 }
 
 int main(int argc,char ** argv)
-{
-    
+{    
     if(!Init())
     {
         std::cout << "init fail!" << std::endl;
@@ -138,25 +149,31 @@ int main(int argc,char ** argv)
 
     for(int user_id = 0;user_id <= g_max_user_id;user_id++)
     {
+        std::cout << "user_id:" << user_id << std::endl;
         int ret = IsUser(user_id);
+        std::cout << "ret:" << ret << std::endl;
         if(RET_OK == ret)
         {
             //存在用户
             if(CreateIndex(user_id))
             {
                 //todo 写成功日志
-                FDLOG("fail") << user_id << std::endl; 
+                FDLOG("fail") << user_id << endl; 
             }
             else
             {
-                FDLOG("succ") << user_id << std::endl; 
+                FDLOG("succ") << user_id << endl; 
             }
         }
         else if(RET_ERR_AUTH_QUERY_BYUIDAPPID == ret || RET_SYS_ERR == ret)
         {
             //查选错误/超时 to do 写查选失败日志
-            FDLOG("fail") << user_id << std::endl; 
-        }        
+            FDLOG("fail") << user_id << endl; 
+        } 
+        else if(8273 == ret)
+        {
+            FDLOG("nodata") << user_id << endl; 
+        }       
     }   
 
     return 0;
